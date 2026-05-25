@@ -1,0 +1,863 @@
+{
+  "name": "Smart Competitor Intelligence System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [0],
+              "triggerAtHour": 20,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "node-01-schedule",
+      "name": "Every Sunday 8PM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "cfg-1", "name": "weekDate", "value": "={{ $now.format('yyyy-MM-dd') }}", "type": "string"},
+            {"id": "cfg-2", "name": "previousWeekDate", "value": "={{ $now.minus({weeks: 1}).format('yyyy-MM-dd') }}", "type": "string"},
+            {"id": "cfg-3", "name": "reportTitle", "value": "={{ 'Weekly Competitor Intelligence - ' + $now.format('MMMM d, yyyy') }}", "type": "string"},
+            {"id": "cfg-4", "name": "yourCompanyName", "value": "Your Company Name", "type": "string"},
+            {"id": "cfg-5", "name": "yourIndustry", "value": "SaaS / B2B Software", "type": "string"},
+            {"id": "cfg-6", "name": "groqModel", "value": "llama-3.1-70b-versatile", "type": "string"},
+            {"id": "cfg-7", "name": "maxTokens", "value": "=4096", "type": "number"},
+            {"id": "cfg-8", "name": "googleSheetsId", "value": "YOUR_GOOGLE_SHEETS_ID_HERE", "type": "string"},
+            {"id": "cfg-9", "name": "googleDriveFolderId", "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE", "type": "string"},
+            {"id": "cfg-10", "name": "discordWebhookUrl", "value": "YOUR_DISCORD_WEBHOOK_URL_HERE", "type": "string"},
+            {"id": "cfg-11", "name": "telegramChatId", "value": "YOUR_TELEGRAM_CHAT_ID_HERE", "type": "string"},
+            {"id": "cfg-12", "name": "competitor1Name", "value": "Competitor A", "type": "string"},
+            {"id": "cfg-13", "name": "competitor1Url", "value": "https://competitora.com/pricing", "type": "string"},
+            {"id": "cfg-14", "name": "competitor2Name", "value": "Competitor B", "type": "string"},
+            {"id": "cfg-15", "name": "competitor2Url", "value": "https://competitorb.com/features", "type": "string"},
+            {"id": "cfg-16", "name": "competitor3Name", "value": "Competitor C", "type": "string"},
+            {"id": "cfg-17", "name": "competitor3Url", "value": "https://competitorc.com", "type": "string"},
+            {"id": "cfg-18", "name": "productHuntRssUrl", "value": "https://www.producthunt.com/feed", "type": "string"},
+            {"id": "cfg-19", "name": "industryRssUrl", "value": "https://news.ycombinator.com/rss", "type": "string"}
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-02-config",
+      "name": "Set Weekly Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Set Weekly Config').item.json.competitor1Url }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "headers": {
+            "values": [
+              {"name": "User-Agent", "value": "Mozilla/5.0 (compatible; IntelligenceBot/1.0)"},
+              {"name": "Accept", "value": "text/html,application/xhtml+xml"}
+            ]
+          }
+        }
+      },
+      "id": "node-03-http-comp1",
+      "name": "Fetch Competitor A Site",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 160],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Set Weekly Config').item.json.competitor2Url }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "headers": {
+            "values": [
+              {"name": "User-Agent", "value": "Mozilla/5.0 (compatible; IntelligenceBot/1.0)"},
+              {"name": "Accept", "value": "text/html,application/xhtml+xml"}
+            ]
+          }
+        }
+      },
+      "id": "node-04-http-comp2",
+      "name": "Fetch Competitor B Site",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 340],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Set Weekly Config').item.json.competitor3Url }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "headers": {
+            "values": [
+              {"name": "User-Agent", "value": "Mozilla/5.0 (compatible; IntelligenceBot/1.0)"},
+              {"name": "Accept", "value": "text/html,application/xhtml+xml"}
+            ]
+          }
+        }
+      },
+      "id": "node-05-http-comp3",
+      "name": "Fetch Competitor C Site",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 520],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {"key": "pageTitle", "cssSelector": "title", "returnValue": "text"},
+            {"key": "h1Headings", "cssSelector": "h1, h2", "returnValue": "text"},
+            {"key": "pricingContent", "cssSelector": ".pricing, #pricing, [class*='price'], [id*='price'], [class*='plan'], .plans", "returnValue": "text"},
+            {"key": "featureContent", "cssSelector": ".features, #features, [class*='feature'], nav", "returnValue": "text"},
+            {"key": "mainContent", "cssSelector": "main, article, .content, [role='main']", "returnValue": "text"}
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-06-html-comp1",
+      "name": "Extract Competitor A Data",
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [940, 160]
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {"key": "pageTitle", "cssSelector": "title", "returnValue": "text"},
+            {"key": "h1Headings", "cssSelector": "h1, h2", "returnValue": "text"},
+            {"key": "pricingContent", "cssSelector": ".pricing, #pricing, [class*='price'], [id*='price'], [class*='plan'], .plans", "returnValue": "text"},
+            {"key": "featureContent", "cssSelector": ".features, #features, [class*='feature'], nav", "returnValue": "text"},
+            {"key": "mainContent", "cssSelector": "main, article, .content, [role='main']", "returnValue": "text"}
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-07-html-comp2",
+      "name": "Extract Competitor B Data",
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [940, 340]
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {"key": "pageTitle", "cssSelector": "title", "returnValue": "text"},
+            {"key": "h1Headings", "cssSelector": "h1, h2", "returnValue": "text"},
+            {"key": "pricingContent", "cssSelector": ".pricing, #pricing, [class*='price'], [id*='price'], [class*='plan'], .plans", "returnValue": "text"},
+            {"key": "featureContent", "cssSelector": ".features, #features, [class*='feature'], nav", "returnValue": "text"},
+            {"key": "mainContent", "cssSelector": "main, article, .content, [role='main']", "returnValue": "text"}
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-08-html-comp3",
+      "name": "Extract Competitor C Data",
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [940, 520]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Set Weekly Config').item.json.productHuntRssUrl }}",
+        "options": {}
+      },
+      "id": "node-09-rss-producthunt",
+      "name": "RSS - Product Hunt",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [700, 700],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Set Weekly Config').item.json.industryRssUrl }}",
+        "options": {}
+      },
+      "id": "node-10-rss-industry",
+      "name": "RSS - Industry News",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [700, 880],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate and normalize all data sources into unified intelligence objects\nconst items = $input.all();\nconst config = $('Set Weekly Config').first().json;\nconst weekDate = config.weekDate;\n\nconst normalized = [];\n\nfor (const item of items) {\n  const d = item.json;\n  \n  // Determine source type and competitor\n  let source = 'web';\n  let competitorName = 'Unknown';\n  let content = '';\n  let itemUrl = '';\n  let pubDate = weekDate;\n\n  if (d.link || d.guid || d.pubDate) {\n    // RSS item\n    source = 'rss';\n    competitorName = d.categories?.join(', ') || 'Industry';\n    content = (d.contentSnippet || d.content || d.description || '').substring(0, 800);\n    itemUrl = d.link || d.guid || '';\n    pubDate = d.pubDate || weekDate;\n  } else {\n    // Web scraped item - try to match by pageTitle context\n    const title = (d.pageTitle || '').toLowerCase();\n    if (title.includes(config.competitor1Name?.toLowerCase() || 'competitor a')) {\n      competitorName = config.competitor1Name;\n      itemUrl = config.competitor1Url;\n    } else if (title.includes(config.competitor2Name?.toLowerCase() || 'competitor b')) {\n      competitorName = config.competitor2Name;\n      itemUrl = config.competitor2Url;\n    } else if (title.includes(config.competitor3Name?.toLowerCase() || 'competitor c')) {\n      competitorName = config.competitor3Name;\n      itemUrl = config.competitor3Url;\n    } else {\n      // Assign based on order — each node sends one item so cycle through\n      competitorName = config.competitor1Name || 'Competitor';\n    }\n\n    const parts = [\n      d.pageTitle || '',\n      d.h1Headings || '',\n      d.pricingContent || '',\n      d.featureContent || '',\n      d.mainContent || ''\n    ].filter(Boolean);\n    content = parts.join(' | ').substring(0, 1200);\n  }\n\n  if (content.trim()) {\n    normalized.push({\n      source,\n      competitor: competitorName,\n      title: d.title || d.pageTitle || 'No Title',\n      content: content.trim(),\n      url: itemUrl,\n      pubDate,\n      weekDate\n    });\n  }\n}\n\nreturn [{ json: { allData: normalized, totalItems: normalized.length, weekDate, collectedAt: new Date().toISOString() } }];"
+      },
+      "id": "node-11-aggregate",
+      "name": "Aggregate All Sources",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1180, 480]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Set Weekly Config').item.json.googleSheetsId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "RawData",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "weekDate",
+              "lookupValue": "={{ $('Set Weekly Config').item.json.previousWeekDate }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-12-sheets-read",
+      "name": "Read Previous Week Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [700, 1060],
+      "continueOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "node-13-merge",
+      "name": "Merge Current + History",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1420, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compare this week's data with last week and prepare Scout brief\nconst items = $input.all();\nconst config = $('Set Weekly Config').first().json;\n\n// Separate current week data from history\nlet currentData = null;\nconst previousRows = [];\n\nfor (const item of items) {\n  const d = item.json;\n  if (d.allData) {\n    // This is from Aggregate All Sources\n    currentData = d;\n  } else if (d.weekDate === config.previousWeekDate) {\n    previousRows.push(d);\n  }\n}\n\nif (!currentData) {\n  // Fallback: use whatever is available\n  const firstItem = items[0]?.json || {};\n  currentData = { allData: [], totalItems: 0, weekDate: config.weekDate };\n}\n\n// Build comparison context\nconst comparisonContext = previousRows.length > 0\n  ? `PREVIOUS WEEK DATA (${config.previousWeekDate}):\\n${JSON.stringify(previousRows.slice(0, 20), null, 2)}`\n  : 'No previous week data available for comparison (first run or data gap).';\n\n// Token estimation\nconst dataStr = JSON.stringify(currentData.allData);\nconst estimatedTokens = Math.round(dataStr.length / 4);\nconst tokenWarning = estimatedTokens > 8000 ? ' [TRUNCATED FOR TOKEN LIMIT]' : '';\n\n// Truncate data if needed\nconst dataForAgent = currentData.allData.slice(0, 30).map(item => ({\n  source: item.source,\n  competitor: item.competitor,\n  title: item.title.substring(0, 100),\n  content: item.content.substring(0, 600),\n  url: item.url,\n  pubDate: item.pubDate\n}));\n\nreturn [{\n  json: {\n    weekDate: config.weekDate,\n    previousWeekDate: config.previousWeekDate,\n    yourCompany: config.yourCompanyName,\n    industry: config.yourIndustry,\n    groqModel: config.groqModel,\n    maxTokens: config.maxTokens,\n    currentData: dataForAgent,\n    totalSourcesCollected: currentData.totalItems,\n    comparisonContext,\n    estimatedInputTokens: estimatedTokens + tokenWarning,\n    previousDataAvailable: previousRows.length > 0\n  }\n}];"
+      },
+      "id": "node-14-compare",
+      "name": "Compare & Prepare Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1660, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Scout Agent request payload\nconst d = $input.first().json;\n\nconst SCOUT_SYSTEM_PROMPT = `You are the Scout Agent in a Multi-Agent Competitor Intelligence System for ${d.yourCompany} in the ${d.industry} space.\n\nYour mission: Organize and summarize raw competitor data collected this week (${d.weekDate}) into a structured intelligence brief.\n\nTASKS:\n1. Review ALL raw data items and identify meaningful intelligence signals\n2. Categorize findings by competitor\n3. Flag significant changes: new features, pricing shifts, messaging updates, new blog themes, product launches\n4. Assess data completeness and flag gaps\n5. Compare with previous week context if available\n6. Produce a clean, structured JSON brief for the Analyst Agent\n\nRULES:\n- Respond ONLY with valid JSON (no markdown, no extra text)\n- Be factual and evidence-based — cite where each observation comes from\n- Flag confidence level for each finding\n- Keep competitor summaries under 200 words each\n- Identify the 3 most significant developments of the week\n\nOUTPUT FORMAT:\n{\n  \"intelligence_week\": \"${d.weekDate}\",\n  \"previous_week\": \"${d.previousWeekDate}\",\n  \"sources_analyzed\": <number>,\n  \"competitors\": [\n    {\n      \"name\": \"<competitor name>\",\n      \"key_changes_this_week\": [\"change 1\", \"change 2\"],\n      \"new_features_detected\": [\"feature\"],\n      \"pricing_signals\": \"<pricing observations or 'no data'>\",\n      \"content_themes\": [\"theme 1\", \"theme 2\"],\n      \"market_positioning\": \"<how they position themselves>\",\n      \"notable_urls\": [\"url1\"],\n      \"confidence\": \"high/medium/low\",\n      \"vs_last_week\": \"<what changed vs previous week or 'no comparison data'>\"\n    }\n  ],\n  \"market_signals\": [\n    {\n      \"signal\": \"<description>\",\n      \"source\": \"<where found>\",\n      \"significance\": \"high/medium/low\",\n      \"potential_impact_on_us\": \"<how this affects ${d.yourCompany}>\"\n    }\n  ],\n  \"data_quality\": {\n    \"completeness\": \"high/medium/low\",\n    \"gaps\": [\"missing data 1\"],\n    \"recommendations\": [\"improve X data collection\"]\n  },\n  \"top_3_developments\": [\n    {\"rank\": 1, \"development\": \"<most important thing>\", \"urgency\": \"high/medium/low\"}\n  ],\n  \"week_summary\": \"<2-3 sentence executive summary>\"\n}`;\n\nconst userContent = `CURRENT WEEK DATA (${d.weekDate}):\\n${JSON.stringify(d.currentData, null, 2)}\\n\\n${d.comparisonContext}`;\n\nreturn [{\n  json: {\n    requestPayload: {\n      model: d.groqModel,\n      messages: [\n        { role: 'system', content: SCOUT_SYSTEM_PROMPT },\n        { role: 'user', content: userContent }\n      ],\n      temperature: 0.2,\n      max_tokens: d.maxTokens\n    },\n    agentMeta: { agent: 'Scout', week: d.weekDate, groqModel: d.groqModel }\n  }\n}];"
+      },
+      "id": "node-15-prep-scout",
+      "name": "Prepare Scout Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1900, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "rawBody",
+        "rawBody": "={{ JSON.stringify($json.requestPayload) }}",
+        "options": {
+          "timeout": 120000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000
+          },
+          "response": {
+            "response": {
+              "neverError": false
+            }
+          }
+        }
+      },
+      "id": "node-16-scout-groq",
+      "name": "Scout Agent [Groq]",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2140, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_GROQ_CREDENTIAL_ID",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Scout Agent response and extract intelligence brief\nconst response = $input.first().json;\nconst agentMeta = $('Prepare Scout Request').first().json.agentMeta;\nconst compareData = $('Compare & Prepare Brief').first().json;\n\nlet scoutOutput = '';\nlet parsedBrief = null;\n\ntry {\n  const rawContent = response.choices?.[0]?.message?.content || '';\n  scoutOutput = rawContent;\n  \n  // Try to extract JSON from the response\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    parsedBrief = JSON.parse(jsonMatch[0]);\n  }\n} catch (e) {\n  parsedBrief = { parse_error: e.message, raw: scoutOutput.substring(0, 500) };\n}\n\nconst usage = response.usage || {};\nconst tokenCost = {\n  prompt_tokens: usage.prompt_tokens || 0,\n  completion_tokens: usage.completion_tokens || 0,\n  total_tokens: usage.total_tokens || 0,\n  estimated_cost_usd: '$0.00 (Groq free tier)'\n};\n\nreturn [{\n  json: {\n    scoutBrief: parsedBrief || { raw: scoutOutput },\n    scoutRawOutput: scoutOutput,\n    weekDate: compareData.weekDate,\n    previousWeekDate: compareData.previousWeekDate,\n    yourCompany: compareData.yourCompany,\n    industry: compareData.industry,\n    groqModel: compareData.groqModel,\n    maxTokens: compareData.maxTokens,\n    tokenUsage: tokenCost,\n    agentChain: ['Scout']\n  }\n}];"
+      },
+      "id": "node-17-parse-scout",
+      "name": "Parse Scout Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2380, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Analyst Agent request\nconst d = $input.first().json;\n\nconst ANALYST_SYSTEM_PROMPT = `You are the Analyst Agent in a Multi-Agent Competitor Intelligence System for ${d.yourCompany} in the ${d.industry} space.\n\nYou receive a structured intelligence brief from the Scout Agent and produce a deep analytical assessment.\n\nYour role:\n1. Analyze competitive positioning and strategy shifts with evidence\n2. Identify patterns, trends, and trajectories across competitors\n3. Assess product development directions and feature velocity\n4. Analyze messaging, GTM changes, and audience targeting shifts\n5. Identify competitive threats (scored by severity) and opportunities\n6. Estimate competitor growth signals (hiring signals, content volume, new integrations)\n7. Predict likely next moves for each competitor\n\nRULES:\n- Respond ONLY with valid JSON\n- Every claim must cite a specific piece of evidence from the Scout brief\n- Use a 1-10 severity scale for threats\n- Provide confidence levels (high/medium/low) for predictions\n- Be analytical and forward-looking, not just descriptive\n\nOUTPUT FORMAT:\n{\n  \"analysis_date\": \"${d.weekDate}\",\n  \"analyst_version\": \"1.0\",\n  \"competitive_landscape\": {\n    \"overall_intensity\": \"high/medium/low\",\n    \"market_phase\": \"growth/maturity/disruption/consolidation\",\n    \"key_dynamics\": [\"dynamic 1\", \"dynamic 2\"]\n  },\n  \"competitor_deep_dives\": [\n    {\n      \"competitor\": \"<name>\",\n      \"strategic_direction\": \"<what they appear to be building toward>\",\n      \"feature_velocity\": \"accelerating/steady/slowing\",\n      \"pricing_strategy\": \"<observed pricing approach>\",\n      \"target_customer_shift\": \"<who they're moving toward>\",\n      \"predicted_next_moves\": [\"move 1 (confidence: high)\"],\n      \"evidence_base\": [\"evidence 1 from Scout brief\"]\n    }\n  ],\n  \"threat_matrix\": [\n    {\n      \"threat\": \"<description>\",\n      \"competitor\": \"<source>\",\n      \"severity\": 1-10,\n      \"timeline\": \"immediate/3-6 months/6-12 months/12+ months\",\n      \"evidence\": \"<supporting data>\",\n      \"recommended_response\": \"<initial suggestion>\"\n    }\n  ],\n  \"opportunity_matrix\": [\n    {\n      \"opportunity\": \"<description>\",\n      \"type\": \"gap/positioning/timing/technology\",\n      \"potential_impact\": \"high/medium/low\",\n      \"evidence\": \"<why this opportunity exists>\",\n      \"capture_window\": \"<how long we have>\"\n    }\n  ],\n  \"trend_analysis\": [\n    {\n      \"trend\": \"<description>\",\n      \"direction\": \"accelerating/emerging/declining\",\n      \"implications\": \"<what this means for ${d.yourCompany}>\"\n    }\n  ],\n  \"key_insights\": [\"insight 1\", \"insight 2\", \"insight 3\"],\n  \"analyst_confidence\": \"high/medium/low\",\n  \"data_limitations\": [\"limitation 1\"]\n}`;\n\nreturn [{\n  json: {\n    requestPayload: {\n      model: d.groqModel,\n      messages: [\n        { role: 'system', content: ANALYST_SYSTEM_PROMPT },\n        { role: 'user', content: `Perform deep analysis on this Scout intelligence brief:\\n\\n${JSON.stringify(d.scoutBrief, null, 2)}` }\n      ],\n      temperature: 0.3,\n      max_tokens: d.maxTokens\n    },\n    passThrough: d\n  }\n}];"
+      },
+      "id": "node-18-prep-analyst",
+      "name": "Prepare Analyst Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2620, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "rawBody",
+        "rawBody": "={{ JSON.stringify($json.requestPayload) }}",
+        "options": {
+          "timeout": 120000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000
+          }
+        }
+      },
+      "id": "node-19-analyst-groq",
+      "name": "Analyst Agent [Groq]",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2860, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_GROQ_CREDENTIAL_ID",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst passThrough = $('Prepare Analyst Request').first().json.passThrough;\n\nlet analystOutput = '';\nlet parsedAnalysis = null;\n\ntry {\n  const rawContent = response.choices?.[0]?.message?.content || '';\n  analystOutput = rawContent;\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) parsedAnalysis = JSON.parse(jsonMatch[0]);\n} catch (e) {\n  parsedAnalysis = { parse_error: e.message, raw: analystOutput.substring(0, 500) };\n}\n\nreturn [{\n  json: {\n    ...passThrough,\n    analystReport: parsedAnalysis || { raw: analystOutput },\n    analystRawOutput: analystOutput,\n    tokenUsage: {\n      ...passThrough.tokenUsage,\n      analyst_tokens: response.usage?.total_tokens || 0\n    },\n    agentChain: [...(passThrough.agentChain || []), 'Analyst']\n  }\n}];"
+      },
+      "id": "node-20-parse-analyst",
+      "name": "Parse Analyst Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3100, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Critic Agent request\nconst d = $input.first().json;\n\nconst CRITIC_SYSTEM_PROMPT = `You are the Critic Agent in a Multi-Agent Competitor Intelligence System for ${d.yourCompany}.\n\nYour role is quality control and intellectual rigor. You receive both the Scout brief AND the Analyst's assessment, and your job is to challenge, refine, and improve the analysis.\n\nCRITIQUE FRAMEWORK:\n1. EVIDENCE CHECK: Flag every claim that lacks supporting data from the Scout brief\n2. BIAS DETECTION: Identify confirmation bias, availability bias, or overconfidence\n3. ALTERNATIVE HYPOTHESES: Offer competing explanations for observed competitor behavior\n4. SEVERITY CALIBRATION: Challenge threat/opportunity scores that seem inflated or deflated\n5. GAP ANALYSIS: Identify important angles the Analyst missed entirely\n6. PREDICTION STRESS-TEST: Which predictions are based on weak evidence?\n7. ACTIONABILITY REVIEW: Flag recommendations that are too vague or impractical\n\nRULES:\n- Respond ONLY with valid JSON\n- Be critical but constructive — your goal is to improve, not to dismiss\n- Every critique must specify the exact claim being challenged\n- Provide a revised confidence rating for each major finding\n- Generate at least 2 alternative interpretations for the top findings\n\nOUTPUT FORMAT:\n{\n  \"critique_date\": \"${d.weekDate}\",\n  \"overall_analysis_quality\": \"excellent/good/fair/poor\",\n  \"quality_score\": 1-10,\n  \"strengths\": [\"strength 1\", \"strength 2\"],\n  \"critical_issues\": [\n    {\n      \"issue\": \"<what the Analyst got wrong or overstated>\",\n      \"original_claim\": \"<the specific claim being challenged>\",\n      \"why_problematic\": \"<evidence-based reasoning>\",\n      \"severity\": \"high/medium/low\"\n    }\n  ],\n  \"unsupported_claims\": [\n    {\n      \"claim\": \"<the claim>\",\n      \"why_unsupported\": \"<what evidence is missing>\",\n      \"required_evidence\": \"<what would validate this claim>\"\n    }\n  ],\n  \"alternative_interpretations\": [\n    {\n      \"original_finding\": \"<what Analyst said>\",\n      \"alternative\": \"<different explanation>\",\n      \"plausibility\": \"high/medium/low\",\n      \"evidence\": \"<what supports this alternative>\"\n    }\n  ],\n  \"recalibrated_threats\": [\n    {\n      \"threat\": \"<description>\",\n      \"analyst_severity\": <original score>,\n      \"critic_severity\": <revised score>,\n      \"rationale\": \"<why recalibrated>\"\n    }\n  ],\n  \"missed_angles\": [\"important angle 1\", \"important angle 2\"],\n  \"recommended_refinements\": [\"refinement 1\", \"refinement 2\"],\n  \"validated_findings\": [\"finding the Analyst got right with strong evidence\"]\n}`;\n\nreturn [{\n  json: {\n    requestPayload: {\n      model: d.groqModel,\n      messages: [\n        { role: 'system', content: CRITIC_SYSTEM_PROMPT },\n        { role: 'user', content: `Review this intelligence chain:\\n\\nSCOUT BRIEF:\\n${JSON.stringify(d.scoutBrief, null, 2)}\\n\\nANALYST REPORT:\\n${JSON.stringify(d.analystReport, null, 2)}` }\n      ],\n      temperature: 0.4,\n      max_tokens: d.maxTokens\n    },\n    passThrough: d\n  }\n}];"
+      },
+      "id": "node-21-prep-critic",
+      "name": "Prepare Critic Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3340, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "rawBody",
+        "rawBody": "={{ JSON.stringify($json.requestPayload) }}",
+        "options": {
+          "timeout": 120000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000
+          }
+        }
+      },
+      "id": "node-22-critic-groq",
+      "name": "Critic Agent [Groq]",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3580, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_GROQ_CREDENTIAL_ID",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst passThrough = $('Prepare Critic Request').first().json.passThrough;\n\nlet criticOutput = '';\nlet parsedCritique = null;\n\ntry {\n  const rawContent = response.choices?.[0]?.message?.content || '';\n  criticOutput = rawContent;\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) parsedCritique = JSON.parse(jsonMatch[0]);\n} catch (e) {\n  parsedCritique = { parse_error: e.message, raw: criticOutput.substring(0, 500) };\n}\n\nreturn [{\n  json: {\n    ...passThrough,\n    critique: parsedCritique || { raw: criticOutput },\n    criticRawOutput: criticOutput,\n    tokenUsage: {\n      ...passThrough.tokenUsage,\n      critic_tokens: response.usage?.total_tokens || 0\n    },\n    agentChain: [...(passThrough.agentChain || []), 'Critic']\n  }\n}];"
+      },
+      "id": "node-23-parse-critic",
+      "name": "Parse Critic Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3820, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Strategist Agent request\nconst d = $input.first().json;\n\nconst STRATEGIST_SYSTEM_PROMPT = `You are the Strategist Agent in a Multi-Agent Competitor Intelligence System for ${d.yourCompany} in the ${d.industry} space.\n\nYou have access to the full intelligence chain: Scout brief, Analyst deep dive, and Critic's quality review. Your role is to synthesize all of this into actionable strategic recommendations.\n\nSTRATEGIC FRAMEWORK:\n1. IMMEDIATE ACTIONS (0-2 weeks): Urgent responses to high-severity threats\n2. SHORT-TERM STRATEGY (1-3 months): Tactical moves to improve competitive position\n3. MEDIUM-TERM STRATEGY (3-6 months): Strategic initiatives to capture opportunities\n4. LONG-TERM POSITIONING (6-18 months): Structural advantages to build\n\nGUIDING PRINCIPLES:\n- Every recommendation must tie back to specific intelligence evidence\n- Prioritize by impact × urgency matrix\n- Consider resource constraints (assume typical startup/SMB resources)\n- Include success metrics for each major recommendation\n- Identify the single most important action this week\n\nRULES:\n- Respond ONLY with valid JSON\n- Each action item must have: action, rationale, evidence_basis, timeline, priority (1-5), success_metric\n- Use the Critic's refinements to correct any overstated threats\n- Be specific — avoid generic advice like \"improve product\"\n\nOUTPUT FORMAT:\n{\n  \"strategy_date\": \"${d.weekDate}\",\n  \"strategic_summary\": \"<2-3 sentence executive summary of the competitive situation>\",\n  \"this_weeks_top_priority\": {\n    \"action\": \"<single most important action>\",\n    \"rationale\": \"<why this above all else>\",\n    \"deadline\": \"<specific date or timeframe>\",\n    \"owner\": \"<team/role responsible>\"\n  },\n  \"immediate_actions\": [\n    {\n      \"action\": \"<specific action>\",\n      \"rationale\": \"<why>\",\n      \"evidence_basis\": \"<intelligence that drives this>\",\n      \"timeline\": \"<specific timeframe>\",\n      \"priority\": 1-5,\n      \"success_metric\": \"<how to measure success>\",\n      \"estimated_effort\": \"low/medium/high\"\n    }\n  ],\n  \"short_term_strategy\": [\n    {\n      \"initiative\": \"<strategic initiative>\",\n      \"objective\": \"<what we're trying to achieve>\",\n      \"competitive_rationale\": \"<which competitor dynamic drives this>\",\n      \"key_milestones\": [\"milestone 1\", \"milestone 2\"],\n      \"priority\": 1-5\n    }\n  ],\n  \"medium_term_strategy\": [\n    {\n      \"initiative\": \"<strategic initiative>\",\n      \"objective\": \"<what we're trying to achieve>\",\n      \"timeline\": \"3-6 months\",\n      \"priority\": 1-5\n    }\n  ],\n  \"opportunities_to_capture\": [\n    {\n      \"opportunity\": \"<description>\",\n      \"capture_method\": \"<how to capture it>\",\n      \"window\": \"<how long available>\",\n      \"estimated_impact\": \"high/medium/low\"\n    }\n  ],\n  \"risks_to_mitigate\": [\n    {\n      \"risk\": \"<description>\",\n      \"mitigation\": \"<specific mitigation action>\",\n      \"contingency\": \"<if mitigation fails>\",\n      \"severity\": 1-10\n    }\n  ],\n  \"kpis_to_monitor_next_week\": [\"KPI 1\", \"KPI 2\", \"KPI 3\"],\n  \"signals_to_watch\": [\"signal 1\", \"signal 2\"]\n}`;\n\nreturn [{\n  json: {\n    requestPayload: {\n      model: d.groqModel,\n      messages: [\n        { role: 'system', content: STRATEGIST_SYSTEM_PROMPT },\n        { role: 'user', content: `Build strategy from this intelligence chain:\\n\\nSCOUT:\\n${JSON.stringify(d.scoutBrief, null, 2)}\\n\\nANALYST:\\n${JSON.stringify(d.analystReport, null, 2)}\\n\\nCRITIC REFINEMENTS:\\n${JSON.stringify(d.critique, null, 2)}` }\n      ],\n      temperature: 0.5,\n      max_tokens: d.maxTokens\n    },\n    passThrough: d\n  }\n}];"
+      },
+      "id": "node-24-prep-strat",
+      "name": "Prepare Strategist Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4060, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "rawBody",
+        "rawBody": "={{ JSON.stringify($json.requestPayload) }}",
+        "options": {
+          "timeout": 120000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000
+          }
+        }
+      },
+      "id": "node-25-strat-groq",
+      "name": "Strategist Agent [Groq]",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4300, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_GROQ_CREDENTIAL_ID",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst passThrough = $('Prepare Strategist Request').first().json.passThrough;\n\nlet stratOutput = '';\nlet parsedStrategy = null;\n\ntry {\n  const rawContent = response.choices?.[0]?.message?.content || '';\n  stratOutput = rawContent;\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) parsedStrategy = JSON.parse(jsonMatch[0]);\n} catch (e) {\n  parsedStrategy = { parse_error: e.message, raw: stratOutput.substring(0, 500) };\n}\n\nreturn [{\n  json: {\n    ...passThrough,\n    strategy: parsedStrategy || { raw: stratOutput },\n    stratRawOutput: stratOutput,\n    tokenUsage: {\n      ...passThrough.tokenUsage,\n      strategist_tokens: response.usage?.total_tokens || 0\n    },\n    agentChain: [...(passThrough.agentChain || []), 'Strategist']\n  }\n}];"
+      },
+      "id": "node-26-parse-strat",
+      "name": "Parse Strategist Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4540, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Writer Agent request — final report generation\nconst d = $input.first().json;\n\nconst reportDate = new Date(d.weekDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });\n\nconst WRITER_SYSTEM_PROMPT = `You are the Writer Agent in a Multi-Agent Competitor Intelligence System for ${d.yourCompany}.\n\nYou receive the complete intelligence chain and produce a polished, professional Markdown report suitable for executive stakeholders.\n\nREPORT REQUIREMENTS:\n- Written in clear, professional business English\n- Structured for both quick scanning (executives) and deep reading (analysts)\n- Every section must be evidence-based — no speculation without labeling it as such\n- Use confidence indicators: [HIGH CONFIDENCE], [MEDIUM CONFIDENCE], [ASSESSMENT]\n- Actionable: every section should help the reader make a decision or take an action\n- Length: comprehensive but not bloated (target 1500-2500 words)\n\nFORMATTING:\n- Use Markdown headings (##, ###)\n- Use bullet points for lists of findings\n- Use bold for critical highlights\n- Use tables for comparison data when appropriate\n- Emoji allowed for visual hierarchy but use sparingly\n\nOUTPUT: Valid Markdown ONLY — no JSON, no extra commentary.\n\nREPORT STRUCTURE TO FOLLOW:\n\n# Weekly Competitor Intelligence Report\n## ${reportDate} | Confidential\n\n---\n\n## Executive Summary\n[3-4 paragraph summary covering: overall competitive landscape, most critical development, top strategic implication, key action required]\n\n## This Week's Top Priority\n[Single most important action with rationale]\n\n## Competitor Analysis\n[Per-competitor section with: key changes, product signals, messaging shifts, what it means for us]\n\n## Threat Assessment\n[Table or structured list of threats: High/Medium/Low severity, evidence, recommended response]\n\n## Strategic Opportunities\n[Specific opportunities with capture method and window]\n\n## Recommended Actions\n[Prioritized list with: action, rationale, timeline, owner, success metric]\n\n## Market Signals to Watch\n[Early warning indicators for next week]\n\n## Intelligence Quality Notes\n[Data gaps, confidence levels, methodology notes]\n\n---\n*Report generated by AI Intelligence System | ${d.weekDate} | Agents: Scout → Analyst → Critic → Strategist → Writer*`;\n\nreturn [{\n  json: {\n    requestPayload: {\n      model: d.groqModel,\n      messages: [\n        { role: 'system', content: WRITER_SYSTEM_PROMPT },\n        {\n          role: 'user',\n          content: `Generate the final intelligence report from this complete analysis:\\n\\nSCOUT BRIEF:\\n${JSON.stringify(d.scoutBrief, null, 2)}\\n\\nANALYST REPORT:\\n${JSON.stringify(d.analystReport, null, 2)}\\n\\nCRITIC REVIEW:\\n${JSON.stringify(d.critique, null, 2)}\\n\\nSTRATEGIC PLAN:\\n${JSON.stringify(d.strategy, null, 2)}`\n        }\n      ],\n      temperature: 0.6,\n      max_tokens: d.maxTokens\n    },\n    passThrough: d\n  }\n}];"
+      },
+      "id": "node-27-prep-writer",
+      "name": "Prepare Writer Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4780, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "rawBody",
+        "rawBody": "={{ JSON.stringify($json.requestPayload) }}",
+        "options": {
+          "timeout": 120000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000
+          }
+        }
+      },
+      "id": "node-28-writer-groq",
+      "name": "Writer Agent [Groq]",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5020, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_GROQ_CREDENTIAL_ID",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format and finalize the complete intelligence report\nconst response = $input.first().json;\nconst d = $('Prepare Writer Request').first().json.passThrough;\n\nconst markdownReport = response.choices?.[0]?.message?.content || '# Report Generation Failed\\n\\nThe Writer Agent did not produce output.';\n\n// Calculate total token usage\nconst writerTokens = response.usage?.total_tokens || 0;\nconst totalTokens = Object.values(d.tokenUsage || {}).reduce((sum, val) => {\n  return sum + (typeof val === 'number' ? val : 0);\n}, 0) + writerTokens;\n\n// Build executive summary for notifications\nconst summaryLines = markdownReport.split('\\n').slice(0, 30).join('\\n');\nconst firstParagraph = markdownReport.match(/## Executive Summary\\n([\\s\\S]*?)\\n##/);\nconst execSummary = firstParagraph ? firstParagraph[1].trim().substring(0, 500) : summaryLines.substring(0, 500);\n\n// Discord-safe summary (2000 char limit)\nconst discordSummary = `**Weekly Competitor Intelligence Report - ${d.weekDate}**\\n\\n${execSummary.substring(0, 1400)}...\\n\\n*Full report saved to Google Drive. Agents: Scout → Analyst → Critic → Strategist → Writer | Total tokens: ${totalTokens}*`;\n\n// Telegram summary (4096 char limit, Markdown)\nconst telegramSummary = `*Weekly Intelligence Report - ${d.weekDate}*\\n\\n${execSummary.substring(0, 800)}\\n\\n_Full report saved. Agents: ${(d.agentChain || []).join(' → ')} → Writer_\\nTokens used: ${totalTokens}`;\n\n// Google Sheets row\nconst sheetsRow = {\n  weekDate: d.weekDate,\n  reportTitle: d.weekDate + ' Competitor Intelligence',\n  totalSourcesCollected: d.scoutBrief?.sources_analyzed || 0,\n  topThreatsCount: d.analystReport?.threat_matrix?.length || 0,\n  topOpportunitiesCount: d.analystReport?.opportunity_matrix?.length || 0,\n  analysisSummary: execSummary.substring(0, 500),\n  totalTokensUsed: totalTokens,\n  agentsCompleted: (d.agentChain || []).join(', ') + ', Writer',\n  reportUrl: 'Pending Google Drive upload',\n  generatedAt: new Date().toISOString()\n};\n\nreturn [{\n  json: {\n    markdownReport,\n    discordSummary,\n    telegramSummary,\n    sheetsRow,\n    weekDate: d.weekDate,\n    reportTitle: d.weekDate + ' Competitor Intelligence Report',\n    googleDriveFolderId: d.groqModel ? $('Set Weekly Config').first().json.googleDriveFolderId : '',\n    googleSheetsId: $('Set Weekly Config').first().json.googleSheetsId,\n    discordWebhookUrl: $('Set Weekly Config').first().json.discordWebhookUrl,\n    telegramChatId: $('Set Weekly Config').first().json.telegramChatId,\n    totalTokensUsed: totalTokens,\n    tokenBreakdown: { ...d.tokenUsage, writer_tokens: writerTokens }\n  }\n}];"
+      },
+      "id": "node-29-format-report",
+      "name": "Format Final Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5260, 700]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.googleSheetsId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Reports",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "weekDate": "={{ $json.sheetsRow.weekDate }}",
+            "reportTitle": "={{ $json.sheetsRow.reportTitle }}",
+            "totalSourcesCollected": "={{ $json.sheetsRow.totalSourcesCollected }}",
+            "topThreatsCount": "={{ $json.sheetsRow.topThreatsCount }}",
+            "topOpportunitiesCount": "={{ $json.sheetsRow.topOpportunitiesCount }}",
+            "analysisSummary": "={{ $json.sheetsRow.analysisSummary }}",
+            "totalTokensUsed": "={{ $json.sheetsRow.totalTokensUsed }}",
+            "agentsCompleted": "={{ $json.sheetsRow.agentsCompleted }}",
+            "generatedAt": "={{ $json.sheetsRow.generatedAt }}"
+          }
+        },
+        "matchingColumns": ["weekDate"],
+        "options": {}
+      },
+      "id": "node-30-sheets-save",
+      "name": "Save Report to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [5500, 480],
+      "continueOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "name": "={{ $('Format Final Report').item.json.reportTitle + '.md' }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $('Format Final Report').item.json.googleDriveFolderId }}",
+          "mode": "id"
+        },
+        "binaryData": false,
+        "fileContent": "={{ $('Format Final Report').item.json.markdownReport }}",
+        "options": {
+          "ocrLanguage": ""
+        }
+      },
+      "id": "node-31-drive-save",
+      "name": "Save Report to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [5500, 700],
+      "continueOnFail": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Format Final Report').item.json.discordWebhookUrl }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "rawBody",
+        "rawBody": "={{ JSON.stringify({ content: $('Format Final Report').item.json.discordSummary, username: 'Intelligence Bot', avatar_url: 'https://i.imgur.com/QTW0l6g.png' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "node-32-discord",
+      "name": "Post to Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5500, 920],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Format Final Report').item.json.telegramChatId }}",
+        "text": "={{ $('Format Final Report').item.json.telegramSummary }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-33-telegram",
+      "name": "Send Telegram Summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [5500, 1140],
+      "continueOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "node-34-error-trigger",
+      "name": "Workflow Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [200, 1100]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Set Weekly Config').first().json.telegramChatId }}",
+        "text": "=*Intelligence System ERROR*\n\nWorkflow: {{ $json.workflow.name }}\nNode: {{ $json.execution.error.node?.name || 'Unknown' }}\nError: {{ $json.execution.error.message || 'Unknown error' }}\nTime: {{ $now.format('yyyy-MM-dd HH:mm') }}\n\nCheck n8n execution logs for details.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-35-telegram-error",
+      "name": "Send Error Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [440, 1100],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Phase 1: Data Collection\nSchedule + Config + Web Scraping + RSS\n\nEdit 'Set Weekly Config' to:\n- Add your competitor URLs\n- Add your Google Sheets ID\n- Add Telegram chat ID\n- Add Discord webhook URL",
+        "height": 200,
+        "width": 440,
+        "color": 4
+      },
+      "id": "note-phase1",
+      "name": "Phase 1 Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [160, 160]
+    },
+    {
+      "parameters": {
+        "content": "## Phase 2-3: Aggregation\nAll 5 data sources merge here.\nGoogle Sheets provides previous week context for comparison.\n\nFirst run: No comparison data — that's OK.",
+        "height": 160,
+        "width": 380,
+        "color": 5
+      },
+      "id": "note-phase2",
+      "name": "Phase 2-3 Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1160, 280]
+    },
+    {
+      "parameters": {
+        "content": "## Phase 4-5: Agent Chain\nScout → Analyst → Critic → Strategist → Writer\n\nAll agents use Groq Llama 3.1 70B (FREE)\nCreate 'Groq API' credential:\n- Type: HTTP Header Auth\n- Name: Authorization\n- Value: Bearer gsk_YOUR_KEY",
+        "height": 200,
+        "width": 440,
+        "color": 3
+      },
+      "id": "note-agents",
+      "name": "Agent Chain Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1860, 440]
+    },
+    {
+      "parameters": {
+        "content": "## Phase 6: Delivery\nReport saved to:\n1. Google Sheets (log)\n2. Google Drive (Markdown file)\n3. Discord (summary post)\n4. Telegram (summary message)\n\nAll delivery nodes have continueOnFail=true\nso one failure won't break others.",
+        "height": 200,
+        "width": 380,
+        "color": 6
+      },
+      "id": "note-delivery",
+      "name": "Delivery Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [5460, 280]
+    }
+  ],
+  "connections": {
+    "Every Sunday 8PM": {
+      "main": [[{"node": "Set Weekly Config", "type": "main", "index": 0}]]
+    },
+    "Set Weekly Config": {
+      "main": [[
+        {"node": "Fetch Competitor A Site", "type": "main", "index": 0},
+        {"node": "Fetch Competitor B Site", "type": "main", "index": 0},
+        {"node": "Fetch Competitor C Site", "type": "main", "index": 0},
+        {"node": "RSS - Product Hunt", "type": "main", "index": 0},
+        {"node": "RSS - Industry News", "type": "main", "index": 0},
+        {"node": "Read Previous Week Data", "type": "main", "index": 0}
+      ]]
+    },
+    "Fetch Competitor A Site": {
+      "main": [[{"node": "Extract Competitor A Data", "type": "main", "index": 0}]]
+    },
+    "Fetch Competitor B Site": {
+      "main": [[{"node": "Extract Competitor B Data", "type": "main", "index": 0}]]
+    },
+    "Fetch Competitor C Site": {
+      "main": [[{"node": "Extract Competitor C Data", "type": "main", "index": 0}]]
+    },
+    "Extract Competitor A Data": {
+      "main": [[{"node": "Aggregate All Sources", "type": "main", "index": 0}]]
+    },
+    "Extract Competitor B Data": {
+      "main": [[{"node": "Aggregate All Sources", "type": "main", "index": 0}]]
+    },
+    "Extract Competitor C Data": {
+      "main": [[{"node": "Aggregate All Sources", "type": "main", "index": 0}]]
+    },
+    "RSS - Product Hunt": {
+      "main": [[{"node": "Aggregate All Sources", "type": "main", "index": 0}]]
+    },
+    "RSS - Industry News": {
+      "main": [[{"node": "Aggregate All Sources", "type": "main", "index": 0}]]
+    },
+    "Aggregate All Sources": {
+      "main": [[{"node": "Merge Current + History", "type": "main", "index": 0}]]
+    },
+    "Read Previous Week Data": {
+      "main": [[{"node": "Merge Current + History", "type": "main", "index": 1}]]
+    },
+    "Merge Current + History": {
+      "main": [[{"node": "Compare & Prepare Brief", "type": "main", "index": 0}]]
+    },
+    "Compare & Prepare Brief": {
+      "main": [[{"node": "Prepare Scout Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Scout Request": {
+      "main": [[{"node": "Scout Agent [Groq]", "type": "main", "index": 0}]]
+    },
+    "Scout Agent [Groq]": {
+      "main": [[{"node": "Parse Scout Output", "type": "main", "index": 0}]]
+    },
+    "Parse Scout Output": {
+      "main": [[{"node": "Prepare Analyst Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Analyst Request": {
+      "main": [[{"node": "Analyst Agent [Groq]", "type": "main", "index": 0}]]
+    },
+    "Analyst Agent [Groq]": {
+      "main": [[{"node": "Parse Analyst Output", "type": "main", "index": 0}]]
+    },
+    "Parse Analyst Output": {
+      "main": [[{"node": "Prepare Critic Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Critic Request": {
+      "main": [[{"node": "Critic Agent [Groq]", "type": "main", "index": 0}]]
+    },
+    "Critic Agent [Groq]": {
+      "main": [[{"node": "Parse Critic Output", "type": "main", "index": 0}]]
+    },
+    "Parse Critic Output": {
+      "main": [[{"node": "Prepare Strategist Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Strategist Request": {
+      "main": [[{"node": "Strategist Agent [Groq]", "type": "main", "index": 0}]]
+    },
+    "Strategist Agent [Groq]": {
+      "main": [[{"node": "Parse Strategist Output", "type": "main", "index": 0}]]
+    },
+    "Parse Strategist Output": {
+      "main": [[{"node": "Prepare Writer Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Writer Request": {
+      "main": [[{"node": "Writer Agent [Groq]", "type": "main", "index": 0}]]
+    },
+    "Writer Agent [Groq]": {
+      "main": [[{"node": "Format Final Report", "type": "main", "index": 0}]]
+    },
+    "Format Final Report": {
+      "main": [[
+        {"node": "Save Report to Sheets", "type": "main", "index": 0},
+        {"node": "Save Report to Google Drive", "type": "main", "index": 0},
+        {"node": "Post to Discord", "type": "main", "index": 0},
+        {"node": "Send Telegram Summary", "type": "main", "index": 0}
+      ]]
+    },
+    "Workflow Error Handler": {
+      "main": [[{"node": "Send Error Alert", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    {"name": "intelligence"},
+    {"name": "ai-agents"},
+    {"name": "competitor-analysis"},
+    {"name": "free-tier"}
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "n8nVersion": "1.0.0"
+  }
+}
